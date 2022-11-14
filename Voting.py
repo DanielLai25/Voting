@@ -150,8 +150,6 @@ def data_process(df):
         df.loc[df['shareOption_2'].notnull(), 'Weight'] = df['shareOption_2']
 #        df.loc[df['shareOption_2'].isnull(), 'Weight'] = df['share']
         
-        st.write(df) 
-        
     elif have_shareOption == '不是':
         df_wrong_weight = df.loc[df['share'].isnull()]
         df = df.loc[df['share'].notnull()]
@@ -337,6 +335,7 @@ if program_setting == '初次統計出席人數':
 
         df = df.drop_duplicates(subset=['Block','Floor','Flat'])
         
+        
 ###########################################
 # total_people_num = block * floor * flat #
 # total_share_num needs to customize      #
@@ -388,15 +387,22 @@ if program_setting == '初次統計出席人數':
         count_people_num = int(len(df.count(axis=1)))
         count_share_num = float(df['shareOption_2'].sum())
 
+        df_owner = df.loc[df['Owner'].isin(["YES"])]
+        owner_people_num = int(len(df_owner.count(axis=1)))
+        non_owner_people_num = count_people_num - owner_people_num
+        
+        owner_count_share_num = float(df_owner['shareOption_2'].sum())
+        non_owner_count_share_num = count_share_num - owner_count_share_num
+        
         percent_people_num = "{:.2f}".format(count_people_num / total_people_num * 100)
         percent_share_num = "{:.2f}".format(count_share_num / total_share_num * 100) 
 
         df_visualization = pd.DataFrame([
-                        [total_people_num, count_people_num, percent_people_num], 
-                        [total_share_num, count_share_num, percent_share_num]],
+                        [total_people_num, count_people_num, percent_people_num, owner_people_num, non_owner_people_num], 
+                        [total_share_num, count_share_num, percent_share_num, owner_count_share_num, non_owner_count_share_num]],
 
                         index=['投票人數   ', '業權份數   '],
-                        columns=['總人數/份數     ', '出席人數/份數     ', '人數/份數%     '])
+                        columns=['總人/份數', '出席人/份數', '人/份數%', '親身出席人/份數 ', '授權出席人/份數 '])
         st.header("出席人數及業權份數統計")
         st.write(df_visualization)
         
@@ -404,9 +410,9 @@ if program_setting == '初次統計出席人數':
         st.write("取消授權票數為:", cancel_num_vote)
         
         df_distribution = pd.DataFrame([
-                        [total_people_num, count_people_num, percent_people_num], 
-                        [total_share_num, count_share_num, percent_share_num]],
-                        columns=['Total', 'Present', 'Percent'],
+                        [total_people_num, count_people_num, percent_people_num, owner_people_num, non_owner_people_num], 
+                        [total_share_num, count_share_num, percent_share_num, owner_count_share_num, non_owner_count_share_num]],
+                        columns=['Total', 'Present', 'Percent', 'Owner', 'Non_Onwer'],
                         index=['People','Share'])
         df_distribution.to_csv("./temp_csv/voting_distribution.csv", encoding='utf-8')
         
@@ -496,13 +502,21 @@ if program_setting == '上傳附加出席人數檔案及更新':
         percent_people_num = "{:.2f}".format(count_people_num / total_people_num * 100)
         percent_share_num = "{:.2f}".format(count_share_num / total_share_num * 100) 
 
+        df_owner = df.loc[df['Owner'].isin(["YES"])]
+        owner_people_num = int(len(df_owner.count(axis=1)))
+        non_owner_people_num = count_people_num - owner_people_num
+        
+        owner_count_share_num = float(df_owner['shareOption_2'].sum())
+        non_owner_count_share_num = count_share_num - owner_count_share_num
+
         df_visualization = pd.DataFrame([
-                        [total_people_num, count_people_num, percent_people_num], 
-                        [total_share_num, count_share_num, percent_share_num]],
+                        [total_people_num, count_people_num, percent_people_num, owner_people_num, non_owner_people_num], 
+                        [total_share_num, count_share_num, percent_share_num, owner_count_share_num, non_owner_count_share_num]],
 
                         index=['投票人數   ', '業權份數   '],
-                        columns=['總人數/份數     ', '出席人數/份數     ', '人數/份數%     '])
+                        columns=['總人/份數', '出席人/份數', '人/份數%', '親身出席人/份數 ', '授權出席人/份數 '])
         st.header("出席人數及業權份數統計")
+
         st.write(df_visualization)
 
         cancel_num_vote = str(original_count_people_num - count_people_num)
@@ -512,10 +526,11 @@ if program_setting == '上傳附加出席人數檔案及更新':
         st.write("新增票數為:",new_add_vote)
 
         df_distribution = pd.DataFrame([
-                        [total_people_num, count_people_num, percent_people_num], 
-                        [total_share_num, count_share_num, percent_share_num]],
-                        columns=['Total', 'Present', 'Percent'],
+                        [total_people_num, count_people_num, percent_people_num, owner_people_num, non_owner_people_num], 
+                        [total_share_num, count_share_num, percent_share_num, owner_count_share_num, non_owner_count_share_num]],
+                        columns=['Total', 'Present', 'Percent', 'Owner', 'Non_Onwer'],
                         index=['People','Share'])
+
         df_distribution.to_csv("./temp_csv/voting_distribution.csv", encoding='utf-8')
 
         df_dup['Floor'] = df_dup['Floor'].astype(str)
@@ -618,7 +633,7 @@ if program_setting == '計算投票結果':
         #generate PDF report
         if download_flag:
             
-            #fig_f.write_image("./temp_png/pic1.png",engine="orca") 
+            fig_f.write_image("./temp_png/pic1.png",engine="orca") 
             fig_f.write_image("./temp_png/pic1.png") 
             dfi.export(df_list[i], "./temp_png/pic2.png")
             dfi.export(df_s_list[i], "./temp_png/pic3.png")
