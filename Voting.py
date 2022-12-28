@@ -32,10 +32,15 @@ if program_setting == '計算投票結果':
 
     if question_type == '多項選擇題':
     
-        max_selection = st.sidebar.number_input("多項選擇題最大可選數量", min_value=1, max_value=100, value=1, key=int)    
+        max_selection = st.sidebar.number_input("多項選擇題最大可選數量", min_value=1, max_value=100, value=1, key=int)
         
+        question_num = 1
+        
+    else:    
+        question_num = st.sidebar.number_input("議程問題總數目", min_value=1, max_value=100, value=1, key=int)
+    
     download_flag = st.sidebar.checkbox("下載結果成PDF")    
-question_num = 1    
+    
 #question_num = st.sidebar.number_input("Total Questions in One Vote", min_value=1, value=1, key=int)   
 #show_stat_detail = st.sidebar.selectbox("Show Detail Voting Stat",['Show', 'Do not show'])
 
@@ -588,7 +593,9 @@ if program_setting == '計算投票結果':
             df_raw.loc[df_raw['share'].isin(['*','**','***','****']),'share'] = None
 
             #temp use
-            df_raw = df_raw.loc[~df_raw['q1'].isin(['BLANK'])]
+            for i in range(1, int(question_num)+1):
+                q_name = 'q' + str(i)
+                df_raw = df_raw.loc[~df_raw[q_name].isin(['BLANK'])]
 
             df_clear, stat_detail = data_process(df_raw)
 
@@ -609,16 +616,29 @@ if program_setting == '計算投票結果':
             fig_list = []
             df_list = []
             df_s_list = []
+            
+            if question_type == "多項選擇題":
+                for i in range(1, int(question_num) + 1):
+                    choice_name = "選項" + str(i) + "  "
+                    df_temp = df_clear.loc[df_clear[choice_name].notnull()]
 
-            for i in range(1, int(question_num) + 1):
-                choice_name = "選項" + str(i) + "  "
-                df_temp = df_clear.loc[df_clear[choice_name].notnull()]
+                    fig_f, df_f, df_s_f = show_results(df_temp, choice_name)
 
-                fig_f, df_f, df_s_f = show_results(df_temp, choice_name)
+                    fig_list.append(fig_f)
+                    df_list.append(df_f)
+                    df_s_list.append(df_s_f)
+            
+            else:
+                for i in range(1, int(question_num) + 1):
+                    choice_name = "選項" + str(i) + "  "
+                    df_temp = df_clear.loc[df_clear[choice_name].notnull()]
 
-                fig_list.append(fig_f)
-                df_list.append(df_f)
-                df_s_list.append(df_s_f)
+                    fig_f, df_f, df_s_f = show_results(df_temp, choice_name)
+
+                    fig_list.append(fig_f)
+                    df_list.append(df_f)
+                    df_s_list.append(df_s_f)
+                    
             st.header("投票數據統計")
             st.write(stat_detail)
 
@@ -634,31 +654,33 @@ if program_setting == '計算投票結果':
            
         #generate PDF report
         if download_flag:
+            for i in range(0, int(question_num)):
+                title = "問題 " + str(i+1)
             
-            fig_f.write_image("./temp_png/pic1.png",engine="orca") 
-            fig_f.write_image("./temp_png/pic1.png") 
-            dfi.export(df_list[i], "./temp_png/pic2.png")
-            dfi.export(df_s_list[i], "./temp_png/pic3.png")
-            
-            pdf = FPDF()
-            pdf.add_font('fireflysung','','fireflysung.ttf',True)
-            pdf.add_page()
-            pdf.set_font('fireflysung',size=9)
-            pdf.text(20,10,Q)
-            pdf.text(20,20,"投票結果圖表")
-            pdf.image("./temp_png/pic1.png",20,40,w=190)
-            
-            pdf.add_page()            
-            pdf.text(20, 20, "投票結果數據統計")
-            pdf.image("./temp_png/pic2.png",20,25,w=45)
-            
-            pdf.add_page()
-            pdf.text(20, 20, "投票結果數據總結")
-            pdf.image("./temp_png/pic3.png",20,25,w=45)
-            
-            now = datetime.now()
-            now_string = now.strftime("%d_%m_%Y_%H%M%S")
-            
-            pdf.output('./report/agenda{}_{}.pdf'.format(vote_num, now_string))
+                fig_list[i].write_image("./temp_png/pic1.png",engine="orca") 
+                #fig_list[i].write_image("./temp_png/pic1.png") 
+                dfi.export(df_list[i], "./temp_png/pic2.png")
+                dfi.export(df_s_list[i], "./temp_png/pic3.png")
+
+                pdf = FPDF()
+                pdf.add_font('fireflysung','','fireflysung.ttf',True)
+                pdf.add_page()
+                pdf.set_font('fireflysung',size=9)
+                pdf.text(20,10,title)
+                pdf.text(20,20,"投票結果圖表")
+                pdf.image("./temp_png/pic1.png",20,40,w=190)
+
+                pdf.add_page()            
+                pdf.text(20, 20, "投票結果數據統計")
+                pdf.image("./temp_png/pic2.png",20,25,w=45)
+
+                pdf.add_page()
+                pdf.text(20, 20, "投票結果數據總結")
+                pdf.image("./temp_png/pic3.png",20,25,w=45)
+
+                now = datetime.now()
+                now_string = now.strftime("%d_%m_%Y_%H%M%S")
+
+                pdf.output('./report/agenda{}_Q{}_{}.pdf'.format(vote_num, (i+1), now_string))
             
             st.write("投票結果PDF成功下載")
