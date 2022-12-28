@@ -412,7 +412,7 @@ if program_setting == '初次統計出席人數':
         df_distribution = pd.DataFrame([
                         [total_people_num, count_people_num, percent_people_num, owner_people_num, non_owner_people_num], 
                         [total_share_num, count_share_num, percent_share_num, owner_count_share_num, non_owner_count_share_num]],
-                        columns=['Total', 'Present', 'Percent', 'Owner', 'Non_Onwer'],
+                        columns=['Total', 'Present', 'Percent', 'Owner', 'Non_Owner'],
                         index=['People','Share'])
         df_distribution.to_csv("./temp_csv/voting_distribution.csv", encoding='utf-8')
         
@@ -528,7 +528,7 @@ if program_setting == '上傳附加出席人數檔案及更新':
         df_distribution = pd.DataFrame([
                         [total_people_num, count_people_num, percent_people_num, owner_people_num, non_owner_people_num], 
                         [total_share_num, count_share_num, percent_share_num, owner_count_share_num, non_owner_count_share_num]],
-                        columns=['Total', 'Present', 'Percent', 'Owner', 'Non_Onwer'],
+                        columns=['Total', 'Present', 'Percent', 'Owner', 'Non_Owner'],
                         index=['People','Share'])
 
         df_distribution.to_csv("./temp_csv/voting_distribution.csv", encoding='utf-8')
@@ -559,9 +559,11 @@ if program_setting == '計算投票結果':
 # (Un)comment to (un)show the distrution  #
 ###########################################
 
-        df_show_distribution.rename(columns={"Total":"總人數/份數       ",
-                                         "Present":"出席人數/份數       ",
-                                         "Percent":"人數/份數%       "}, 
+        df_show_distribution.rename(columns={"Total":"總人數/份數   ",
+                                         "Present":"出席人數/份數    ",
+                                         "Percent":"人數/份數%  ",
+                                         "Owner":"親身出席人/份數     ",
+                                         "Non_Owner":"授權出席人/份數    "}, 
                                 index = {"People":"投票人數    ",
                                          "Share":"業權份數    "},inplace=True) 
 
@@ -590,7 +592,7 @@ if program_setting == '計算投票結果':
 
             df_clear, stat_detail = data_process(df_raw)
 
-            if question_type == "Selection_Question":
+            if question_type == "多項選擇題":
                 for i in range(1, int(len_of_y_axis)+1):
                     choice_name = "選項" + str(i) + "  "
                     df_temp = df_clear[[choice_name, 'Weight','授權票   ']]
@@ -660,5 +662,3 @@ if program_setting == '計算投票結果':
             pdf.output('./report/agenda{}_{}.pdf'.format(vote_num, now_string))
             
             st.write("投票結果PDF成功下載")
-        
-
